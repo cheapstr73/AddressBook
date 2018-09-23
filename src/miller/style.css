@@ -1,0 +1,15 @@
+#mainForm {
+    -fx-font-size: 12px;
+    -fx-font-family: serif;
+    -fx-background-color: transparent; /*#ffffff;*/
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.button{
+    -fx-background-radius: 0;
+}
+
+#statusbar{
+    -fx-font-size: 10px;
+}
