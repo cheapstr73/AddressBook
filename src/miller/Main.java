@@ -268,16 +268,15 @@ public class Main extends Application{
             row.setOnMouseClicked(clickEvent -> {
                 if(clickEvent.getClickCount() == 2 && (!row.isEmpty())){
                     Contact rowItem = row.getItem();
-                   //TESTING Contact c = new ContactForm().editContact(rowItem, appStage);
+                    //Contact c = newContact(rowItem);
                     //TESTING Contact dd = new Contact("aaa", "aaa", "aaa", "aaa", "333","333");
-                    //TESTING mainTable.getItems().set(mainTable.getSelectionModel().getSelectedIndex(), c);
-                    // TESTING System.out.println(c.getFirstName());
+                     //mainTable.getItems().set(mainTable.getSelectionModel().getSelectedIndex(), c);
+                    // System.out.println(c.getFirstName());
                     newContact(rowItem);
                 }
             });
             return row;
         });
-
         openDefaultContactList();
         return mainTable;
     }
@@ -324,7 +323,7 @@ public class Main extends Application{
      * @param c - This is the <b>Contact</b> object to pass to the new form.
      */
     private void newContact(Contact c){
-        new ContactForm(c).start(appStage);
+        new ContactForm(c, appStage);
     }
 
     /**
@@ -337,7 +336,7 @@ public class Main extends Application{
         contacts.add(c);
     }
 
-    public static void openDefaultContactList(){
+    private static void openDefaultContactList(){
 
         try
         {
