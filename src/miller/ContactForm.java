@@ -1,7 +1,5 @@
 package miller;
 import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.geometry.Insets;
 import javafx.scene.image.ImageView;
@@ -10,18 +8,26 @@ import javafx.stage.Stage;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
-import javafx.stage.StageStyle;
-import org.w3c.dom.Text;
-
 public class ContactForm extends Application {
 
     private Stage addContactStage = new Stage();
+    private Contact selectedContact;
+    // Standard width for majority of the TextFields
     private final int FIELDW = 150;
+    private boolean update = false;
+    private String fname = "";
 
-   /* public static void main(String[] args) {
-        launch(args);
-    }*/
+    // Controls to be filled or read from...
+    private TextField fNameField, lNameField, mNameField, email1Field, email2Field, phone1Field, phone2Field;
 
+    public ContactForm(){
+
+    }
+
+    public ContactForm(Contact c){
+        selectedContact = c;
+        update = true;
+    }
     public void start(Stage stage){
 
         GridPane gridPane = new GridPane();
@@ -32,17 +38,18 @@ public class ContactForm extends Application {
 
         // FIRST NAME
         Label fNameLabel = new Label("First Name:");
-        TextField fNameField = new TextField();
+         fNameField = new TextField();
+        fNameField.setText(fname);
         fNameField.setPrefWidth(FIELDW);
 
         // LAST NAME
         Label lNameLabel = new Label("Last Name:");
-        TextField lNameField = new TextField();
+         lNameField = new TextField();
         lNameField.setPrefWidth(FIELDW);
 
         // MIDDLE NAME
         Label mNameLabel = new Label("Middle Name:");
-        TextField mNameField = new TextField();
+         mNameField = new TextField();
         mNameField.setPrefWidth(FIELDW);
         mNameField.setMaxWidth(FIELDW);
 
@@ -129,7 +136,7 @@ public class ContactForm extends Application {
 
         // E-MAIL 1 FIELD
         Label email1Label = new Label("Primary E-Mail:");
-        TextField email1Field = new TextField();
+         email1Field = new TextField();
         email1Field.setPrefWidth(FIELDW);
 
         // E-MAIL TYPE COMBO BOX
@@ -139,7 +146,7 @@ public class ContactForm extends Application {
 
         // E-MAIL 2 FIELD
         Label email2Label = new Label("Secondary E-Mail:");
-        TextField email2Field = new TextField();
+         email2Field = new TextField();
         email1Field.setPrefWidth(FIELDW);
 
         // E-MAIL TYPE COMBO BOX
@@ -149,7 +156,7 @@ public class ContactForm extends Application {
 
         // PRIMARY PHONE FIELD
         Label phone1Label = new Label("Primary Phone:");
-        TextField phone1Field = new TextField();
+         phone1Field = new TextField();
         phone1Field.setPrefWidth(FIELDW);
 
         // PHONE TYPE COMBO BOX
@@ -159,7 +166,7 @@ public class ContactForm extends Application {
 
         // SECONDARY PHONE FIELD
         Label phone2Label = new Label("Primary Phone:");
-        TextField phone2Field = new TextField();
+         phone2Field = new TextField();
         phone2Field.setPrefWidth(FIELDW);
 
         // PHONE TYPE COMBO BOX
@@ -167,15 +174,29 @@ public class ContactForm extends Application {
         phone2ComboBox.getItems().addAll("Cell", "Home", "Work", "Other");
         phone2ComboBox.setPrefWidth(110);
 
+        // TEST BUTTON
+        Button button = new Button("Add Contact");
+        button.setOnAction(e -> {
+            Main.contacts.add(new Contact(
+                    fNameField.getText(),
+                    lNameField.getText(),
+                    email1Field.getText(),
+                    email2Field.getText(),
+                    phone1Field.getText(),
+                    phone2Field.getText()
+            ));
+            addContactStage.close();
+        });
+
         // ADD EVERYTHING TO THE GRID PANE HERE...
         gridPane.add(fNameLabel, 0, 0);
         gridPane.add(fNameField, 0, 1);
 
-        gridPane.add(lNameLabel, 1, 0);
-        gridPane.add(lNameField, 1, 1);
+        gridPane.add(mNameLabel, 1, 0);
+        gridPane.add(mNameField, 1, 1);
 
-        gridPane.add(mNameLabel, 2, 0);
-        gridPane.add(mNameField, 2, 1);
+        gridPane.add(lNameLabel, 2, 0);
+        gridPane.add(lNameField, 2, 1);
 
         gridPane.add(suffixLabel, 3, 0);
         gridPane.add(suffixComboBox, 3, 1);
@@ -207,12 +228,18 @@ public class ContactForm extends Application {
         gridPane.add(phone2Field, 2, 7);
         gridPane.add(phone2ComboBox, 3, 7);
 
+        gridPane.add(button, 3, 8);
+
+
+        fNameField.setText(selectedContact.getFirstName() + "Z");
+        lNameField.setText(selectedContact.getLastName());
+
         Scene childScene = new Scene(gridPane);
         childScene.getStylesheets().add(Main.class.getResource("style.css").toExternalForm());
         addContactStage.setScene(childScene);
         addContactStage.setTitle("Add Contact");
         addContactStage.getIcons().add(new Image(Main.class.getResource("resources/add32.png").toExternalForm()));
-        addContactStage.setWidth(710);
+        addContactStage.setWidth(770);
         addContactStage.setHeight(400);
         addContactStage.initOwner(stage);
         addContactStage.initModality(Modality.APPLICATION_MODAL);

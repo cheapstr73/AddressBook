@@ -1,8 +1,17 @@
+
 package miller;
 
+// import java classes
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+// Import javafx classes
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -18,19 +27,21 @@ import javafx.scene.image.Image;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.geometry.Insets;
-import java.io.File;
 
 public class Main extends Application{
 
+    // Standard toolbar button height and width...
     private final int BTNH = 21;
     private final int BTNW = 21;
+
+    // Set up a few instance variables that will be needed later.
     private Stage appStage;
     private Label statusBarLabel;
+    private static ObjectOutputStream output;
+    private static ObjectInputStream input;
 
-    private static ObservableList<Contact> contacts = FXCollections.observableArrayList(
-            new Contact("Keith", "Miller", "cheapstr@yahoo.com", "703-626-6675"),
-            new Contact("Rachel", "Otts", "rachelotts@gmail.com", "205-276-4422")
-    );
+    // Observable list to feed the main window's TableView control. Make static as we only need one copy of this list for the application.
+    static ObservableList<Contact> contacts = FXCollections.observableArrayList();
 
     public static void main(String[] args) {
         launch(args);
@@ -39,55 +50,65 @@ public class Main extends Application{
     @Override
     public void start(Stage stage) throws Exception{
 
+        // appStage is an instance variable that will act as parent to the child stages initOwner method.
         this.appStage = stage;
         VBox vBox = new VBox();
-        vBox.setId("mainForm");
+        vBox.setId("mainForm"); // ...for the .css
+
+        // Each of these will be created in their own methods
         MenuBar menubar = createMenuBar();
         ToolBar toolBar = createToolBar();
         TableView table = createTable();
         HBox statusBar = createStatusBar();
 
+        // Add everything to the VBox control and set the VGrow so the table will automatically fill the scene when window is resized.
         vBox.getChildren().addAll(menubar, toolBar, table, statusBar);
         vBox.setVgrow(table, Priority.ALWAYS);
 
+	    // Create the scene and associate the .css
         Scene mainScene = new Scene(vBox);
-       // mainScene.getStylesheets().add(Main.class.getResource("style.css").toExternalForm());
+        mainScene.getStylesheets().add(Main.class.getResource("style.css").toExternalForm());
 
+        // Set up the stage to be displayed to screen
         stage.getIcons().add(new Image(Main.class.getResource("resources/main128.png").toExternalForm()));
         stage.setScene(mainScene);
         stage.setTitle("Address Book");
         stage.setWidth(800);
         stage.setHeight(600);
         stage.show();
-
     }
 
+    /**
+     * This method creates the main window's menu bar.
+     * @return MenuBar - This the final MenuBar control.
+     */
     private MenuBar createMenuBar(){
 
         MenuBar mainMenu = new MenuBar();
         Menu fileMenu = new Menu("File");
         Menu editMenu = new Menu("Edit");
         Menu helpMenu = new Menu("Help");
+	    // Make sure the menu is flush to the left of the window...
         mainMenu.setPadding(new Insets(0,0,0,0));
 
-        // Add items to the file menu...
+        // Add items to the 'file' menu...
         MenuItem addItemMenu = new MenuItem("New Contact");
         MenuItem delItemMenu = new MenuItem("Delete Contact");
         MenuItem openItemMenu = new MenuItem("Open File");
         MenuItem saveItemMenu = new MenuItem("Save File");
 
-        // Add items to the help menu
+        // Add items to the 'help' menu
         MenuItem helpItemMenu = new MenuItem("Help");
         MenuItem aboutItemMenu = new MenuItem("About Adddress Book");
 
-        // Create an icon for the menu entry...
-        ImageView addView = new ImageView(new Image(Main.class.getResourceAsStream("resources/add24.png")));
+        // Create a 16x16 icon for each menu item
+        ImageView addView = new ImageView(new Image(Main.class.getResourceAsStream("resources/addcontact.png")));
         addView.setFitHeight(16);
         addView.setFitWidth(16);
         addItemMenu.setGraphic(addView);
         addItemMenu.setOnAction(e -> newContact());
 
-        ImageView delView = new ImageView(new Image(Main.class.getResourceAsStream("resources/remove24.png")));
+        ImageView delView = new ImageView(new Image(Main.class.getResourceAsStream("resources/removecontact.png")));
         delView.setFitWidth(16);
         delView.setFitHeight(16);
         delItemMenu.setGraphic(delView);
@@ -112,14 +133,22 @@ public class Main extends Application{
         aboutView.setFitHeight(16);
         aboutItemMenu.setGraphic(aboutView);
 
-        // Attach individual MenuItems to the menu
-        fileMenu.getItems().addAll(addItemMenu, delItemMenu, openItemMenu, saveItemMenu);
+	// Add a separator to seperate the file menu's items into two distinct groups
+        SeparatorMenuItem hr = new SeparatorMenuItem();
+
+        // Attach individual MenuItems to the 'file' and 'help' menus.
+        fileMenu.getItems().addAll(openItemMenu, saveItemMenu, hr, addItemMenu, delItemMenu);
         helpMenu.getItems().addAll(helpItemMenu, aboutItemMenu);
 
+	// Now add the main menu entries to the menu bar.
         mainMenu.getMenus().addAll(fileMenu, editMenu, helpMenu);
         return mainMenu;
     }
 
+    /**
+     * This method creates the main window's toolbar. Each toolbar button is decorated with a 16x16 icon and a tooltip.
+     * @return ToolBar - This is the main window's ToolBar control.
+     */
     private ToolBar createToolBar(){
 
         ToolBar mainToolBar = new ToolBar();
@@ -128,28 +157,33 @@ public class Main extends Application{
 
         // Create the individual buttons...starting with "New Item" button
         Button btnNewItem = new Button();
-        ImageView imgNewContact = new ImageView(new Image(Main.class.getResourceAsStream("resources/add32.png")));
-        imgNewContact.setFitHeight(BTNH -2);
-        imgNewContact.setFitWidth(BTNW - 2);
+	    // Create an icon for the button...
+        ImageView imgNewContact = new ImageView(new Image(Main.class.getResourceAsStream("resources/addcontact.png")));
+        imgNewContact.setFitHeight(BTNH -2); // Make the icon slightly smaller than the size of the button..
+        imgNewContact.setFitWidth(BTNW - 2); // Make the icon slightly smaller than the size of the button..
         btnNewItem.setGraphic(imgNewContact);
         btnNewItem.setPrefWidth(BTNW);
         btnNewItem.setPrefHeight(BTNH);
+        btnNewItem.setOnMouseEntered(e -> setStatusBar("Add new contact."));
+        btnNewItem.setOnMouseExited(e -> setStatusBar(""));
         btnNewItem.setOnAction(e -> newContact());
 
-        // Delete Item Button
-        Button btnRemoveItem = new Button();
-        ImageView imgRemoveContact = new ImageView(new Image(Main.class.getResourceAsStream("resources/remove32.png")));
-        imgRemoveContact.setFitHeight(BTNH -2);
-        imgRemoveContact.setFitWidth(BTNW - 2);
-        btnRemoveItem.setGraphic(imgRemoveContact);
-        btnRemoveItem.setPrefWidth(BTNW);
-        btnRemoveItem.setPrefHeight(BTNH);
+        // Remove Item Button
+        Button btnDeleteItem = new Button();
+        ImageView imgRemoveContact = new ImageView(new Image(Main.class.getResourceAsStream("resources/removecontact.png")));
+        imgRemoveContact.setFitHeight(BTNH -2); // Make the icon slightly smaller than the size of the button..
+        imgRemoveContact.setFitWidth(BTNW - 2); // Make the icon slightly smaller than the size of the button..
+        btnDeleteItem.setGraphic(imgRemoveContact);
+        btnDeleteItem.setPrefWidth(BTNW);
+        btnDeleteItem.setPrefHeight(BTNH);
+        btnDeleteItem.setOnMouseEntered(e -> setStatusBar("Delete selected contact."));
+        btnDeleteItem.setOnMouseExited(e -> setStatusBar(""));
 
         // Open File Button
         Button btnOpen = new Button();
         ImageView imgOpenItem = new ImageView(new Image(Main.class.getResourceAsStream("resources/open32.png")));
-        imgOpenItem.setFitHeight(BTNH -2);
-        imgOpenItem.setFitWidth(BTNW - 2);
+        imgOpenItem.setFitHeight(BTNH -2); // Make the icon slightly smaller than the size of the button..
+        imgOpenItem.setFitWidth(BTNW - 2); // Make the icon slightly smaller than the size of the button..
         btnOpen.setGraphic(imgOpenItem);
         btnOpen.setPrefWidth(BTNW);
         btnOpen.setPrefHeight(BTNH);
@@ -158,36 +192,93 @@ public class Main extends Application{
         // Save File Button
         Button btnSave = new Button();
         ImageView imgSaveItem = new ImageView(new Image(Main.class.getResourceAsStream("resources/save32.png")));
-        imgSaveItem.setFitHeight(BTNH -2);
-        imgSaveItem.setFitWidth(BTNW - 2);
+        imgSaveItem.setFitHeight(BTNH -2); // Make the icon slightly smaller than the size of the button..
+        imgSaveItem.setFitWidth(BTNW - 2); // Make the icon slightly smaller than the size of the button..
         btnSave.setGraphic(imgSaveItem);
         btnSave.setPrefWidth(BTNW);
         btnSave.setPrefHeight(BTNH);
+        btnSave.setOnAction(e -> saveDefaultContactList());
 
+        // Create the tooltips for the toolbar buttons
+        Tooltip openTT = new Tooltip("File Open");
+        Tooltip saveTT = new Tooltip("Save File");
+        Tooltip newTT = new Tooltip("New Contact");
+        Tooltip removeTT = new Tooltip("Delete Contact");
+        btnOpen.setTooltip(openTT);
+        btnSave.setTooltip(saveTT);
+        btnNewItem.setTooltip(newTT);
+        btnDeleteItem.setTooltip(removeTT);
 
-        mainToolBar.getItems().addAll(btnNewItem, btnRemoveItem, btnOpen, btnSave);
+        // Add a seperator to visually seperate button groups
+        Separator hr = new Separator();
+
+        mainToolBar.getItems().addAll(btnOpen, btnSave, hr, btnNewItem, btnDeleteItem);
         return mainToolBar;
     }
 
+    /**
+     * This method creates the TableView control for the window. The data for the table is set by the ObservableList
+     * <i>contacts</i>. Whenever the ObservableList is updated, the table will update accordingly. Also sets a MouseEvent
+     * for the table rows in order to check for a double-click. Double-clicking a non-empty row will open the child
+     * form and populate it's form elements with the selected <b>Contact</b> object's data.
+     * @return TableView - This is the main window's TableView control
+     */
     private TableView createTable(){
 
         TableView mainTable = new TableView();
 
-        // Set the columns...
+        // Here we set up the columns headers for the table
         TableColumn lNameColumn = new TableColumn("Last Name");
+        lNameColumn.setPrefWidth(100);
         TableColumn fNameColumn = new TableColumn("First Name");
+        fNameColumn.setPrefWidth(100);
         TableColumn emailColumn = new TableColumn("eMail");
-        TableColumn phoneColumn = new TableColumn("Phone");
+        emailColumn.setPrefWidth(150);
+        TableColumn phone1Column = new TableColumn("Phone");
+        TableColumn phone2column = new TableColumn("Phone");
 
+        // Set the value of each cell using <i>PropertyValueFactory</i>.
         lNameColumn.setCellValueFactory(new PropertyValueFactory<Contact, String>("lastName"));
         fNameColumn.setCellValueFactory(new PropertyValueFactory<Contact, String>("firstName"));
-        emailColumn.setCellValueFactory(new PropertyValueFactory<Contact, String>("eMail"));
-        phoneColumn.setCellValueFactory(new PropertyValueFactory<Contact, String>("Phone"));
+        emailColumn.setCellValueFactory(new PropertyValueFactory<Contact, String>("eMail1"));
+        phone1Column.setCellValueFactory(new PropertyValueFactory<Contact, String>("Phone1"));
+        phone2column.setCellValueFactory(new PropertyValueFactory<Contact, String>("Phone2"));
 
+        // Create the context menu to use on the table rows.
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem editItem = new MenuItem("Edit Contact");
+        MenuItem deleteItem = new MenuItem("Delete Contact");
+        contextMenu.getItems().addAll(editItem, deleteItem);
 
-        mainTable.getColumns().addAll(lNameColumn, fNameColumn, emailColumn, phoneColumn);
+        // Add each column to the table.
+        mainTable.getColumns().addAll(lNameColumn, fNameColumn, emailColumn, phone1Column, phone2column);
         mainTable.setItems(contacts);
 
+        // Set up the table row to act on a double-click.
+        mainTable.setRowFactory(e ->{
+            TableRow<Contact> row = new TableRow<>();
+            /*row.setContextMenu(contextMenu);
+            editItem.setOnAction(new EventHandler<ActionEvent>() {
+                @Override
+                public void handle(ActionEvent event) {
+                    Contact item = (Contact) mainTable.getSelectionModel().getSelectedItem();
+                    newContact(item);
+                }
+            });*/
+            row.setOnMouseClicked(clickEvent -> {
+                if(clickEvent.getClickCount() == 2 && (!row.isEmpty())){
+                    Contact rowItem = row.getItem();
+                   //TESTING Contact c = new ContactForm().editContact(rowItem, appStage);
+                    //TESTING Contact dd = new Contact("aaa", "aaa", "aaa", "aaa", "333","333");
+                    //TESTING mainTable.getItems().set(mainTable.getSelectionModel().getSelectedIndex(), c);
+                    // TESTING System.out.println(c.getFirstName());
+                    newContact(rowItem);
+                }
+            });
+            return row;
+        });
+
+        openDefaultContactList();
         return mainTable;
     }
 
@@ -209,7 +300,7 @@ public class Main extends Application{
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open contacts file");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Contact List Files", "*.lst"));
         File chosenFile = fileChooser.showOpenDialog(appStage);
 
         if(chosenFile != null)
@@ -221,10 +312,85 @@ public class Main extends Application{
         return f;
     }
 
+    /**
+     * This will open the newContact form. With no arguments the form will be blank.
+     */
     private void newContact(){ new ContactForm().start(appStage); }
 
+    /**
+     * This method will open the newContact form, but with passing the <b>Contact</b> object, the form will populate
+     * it's controls with the data in the object. This method is called on a non-empty row item being double-clicked
+     * or by using the <i>Edit</i> option on the currently selected item.
+     * @param c - This is the <b>Contact</b> object to pass to the new form.
+     */
+    private void newContact(Contact c){
+        new ContactForm(c).start(appStage);
+    }
+
+    /**
+     * This method add an item to the ObservableList. Once the ObservableList is updated, the main window's table
+     * will update appropriately.
+     * @param c - The <b>Contact</b> object to add to the ObservableList <i>contacts</i>.
+     */
     public static void AddToObservableList(Contact c)
     {
         contacts.add(c);
+    }
+
+    public static void openDefaultContactList(){
+
+        try
+        {
+            input = new ObjectInputStream(Files.newInputStream(Paths.get("default.lst")));
+            while(true)
+                contacts.add((Contact) input.readObject());
+
+        }
+        catch(EOFException e)
+        {
+
+
+        }
+        catch(ClassNotFoundException e)
+        {
+
+        }
+        catch(IOException e)
+        {
+            System.err.print("Could not open default.lst. Terminating.");
+        }
+
+        finally
+        {
+            closeDefaultContactList();
+        }
+    }
+
+    public static void saveDefaultContactList(){
+        try
+        {
+            output = new ObjectOutputStream(Files.newOutputStream(Paths.get("default.lst")));
+            for(Contact c : contacts)
+                output.writeObject(c);
+            closeDefaultContactList();
+        }
+        catch(IOException e)
+        {
+            System.err.print("Error opening file. Terminating.");
+
+            System.exit(1);
+        }
+    }
+
+    public static void closeDefaultContactList(){
+        try
+        {
+            if(output != null)
+                output.close();
+        }
+        catch (IOException e)
+        {
+            System.err.print("Error closing file. Terminating.");
+        }
     }
 }
