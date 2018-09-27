@@ -1,5 +1,6 @@
 package miller;
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.geometry.Insets;
 import javafx.scene.image.ImageView;
@@ -8,6 +9,7 @@ import javafx.stage.Stage;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
+import javafx.stage.WindowEvent;
 
 public class ContactForm extends Application {
 
@@ -37,7 +39,7 @@ public class ContactForm extends Application {
 
     ContactForm(){}
 
-    ContactForm(Contact c, Stage stage){
+    ContactForm(Contact c, int idx, Stage stage){
         selectedContact = c;
 
         // Set the update flag to true. This will determine whether to update the current object to create a new one.
@@ -45,6 +47,14 @@ public class ContactForm extends Application {
 
         // Call the start method and create the stage.
         start(stage);
+
+        // Add an event handler to the Stage's hide event. This will update the static 'contacts' ObservableArrayList in Main.
+        addContactStage.setOnHiding(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                Main.contacts.set(idx, getContact());
+            }
+        });
 
         // Once the stage is created we can fill the form using the provided Contact object.
         fillContactForm(c);
@@ -201,7 +211,8 @@ public class ContactForm extends Application {
         button.setOnAction(e -> {
             if(!update)
                 Main.contacts.add(getContact());
-            addContactStage.close();
+
+            addContactStage.hide();
         });
 
         // ADD EVERYTHING TO THE GRID PANE HERE...
@@ -269,19 +280,20 @@ public class ContactForm extends Application {
 
         return new Contact(
             fNameField.getText(),
+            mNameField.getText(),
             lNameField.getText(),
-            //mNameField.getText(),
-            //suffixComboBox.getSelectionModel().getSelectedItem(),
-           // addressField.getText(),
-            //cityField.getText(),
+            suffixComboBox.getSelectionModel().getSelectedItem(),
+            addressField.getText(),
+            cityField.getText(),
+            stateComboBox.getSelectionModel().getSelectedItem(),
             email1Field.getText(),
-            //email1ComboBox.getSelectionModel().getSelectedItem(),
+            email1ComboBox.getSelectionModel().getSelectedItem(),
             email2Field.getText(),
-            //email2ComboBox.getSelectionModel().getSelectedItem(),
+            email2ComboBox.getSelectionModel().getSelectedItem(),
             phone1Field.getText(),
-            //phone1ComboBox.getSelectionModel().getSelectedItem(),
-            phone2Field.getText()
-            //phone2ComboBox.getSelectionModel().getSelectedItem();
+            phone1ComboBox.getSelectionModel().getSelectedItem(),
+            phone2Field.getText(),
+            phone2ComboBox.getSelectionModel().getSelectedItem()
         );
     }
 
@@ -291,11 +303,19 @@ public class ContactForm extends Application {
      */
     private void fillContactForm(Contact c){
         fNameField.setText(c.getFirstName());
+        mNameField.setText(c.getMidName());
         lNameField.setText(c.getLastName());
+        suffixComboBox.getSelectionModel().select(c.getSuffix());
+        addressField.setText(c.getAddress());
+        cityField.setText(c.getCity());
+        stateComboBox.getSelectionModel().select(c.getState());
         email1Field.setText(c.getEMail1());
+        email1ComboBox.getSelectionModel().select(c.getEmail1Type());
         email2Field.setText(c.getEmail2());
+        email2ComboBox.getSelectionModel().select(c.getEmail2Type());
         phone1Field.setText(c.getPhone1());
+        phone1ComboBox.getSelectionModel().select(c.getPhone1Type());
         phone2Field.setText(c.getPhone2());
+        phone2ComboBox.getSelectionModel().select(c.getPhone2Type());
     }
 }
-

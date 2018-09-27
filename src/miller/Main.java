@@ -187,6 +187,8 @@ public class Main extends Application{
         btnOpen.setGraphic(imgOpenItem);
         btnOpen.setPrefWidth(BTNW);
         btnOpen.setPrefHeight(BTNH);
+        btnOpen.setOnMouseEntered(e -> setStatusBar("Open contacts file."));
+        btnOpen.setOnMouseExited(e -> setStatusBar(""));
         btnOpen.setOnAction(e -> openFile());
 
         // Save File Button
@@ -197,6 +199,8 @@ public class Main extends Application{
         btnSave.setGraphic(imgSaveItem);
         btnSave.setPrefWidth(BTNW);
         btnSave.setPrefHeight(BTNH);
+        btnSave.setOnMouseEntered(e -> setStatusBar("Save contacts file."));
+        btnSave.setOnMouseExited(e -> setStatusBar(""));
         btnSave.setOnAction(e -> saveDefaultContactList());
 
         // Create the tooltips for the toolbar buttons
@@ -268,11 +272,12 @@ public class Main extends Application{
             row.setOnMouseClicked(clickEvent -> {
                 if(clickEvent.getClickCount() == 2 && (!row.isEmpty())){
                     Contact rowItem = row.getItem();
-                    //Contact c = newContact(rowItem);
-                    //TESTING Contact dd = new Contact("aaa", "aaa", "aaa", "aaa", "333","333");
-                     //mainTable.getItems().set(mainTable.getSelectionModel().getSelectedIndex(), c);
-                    // System.out.println(c.getFirstName());
-                    newContact(rowItem);
+
+                    // Get the row index here. We will use this index to update the ObservableArrayList with the 'set' method in the child form (stage).
+                    int x = row.getIndex();
+
+                    // Pull the appropriate contact based on the index of the row that has been double-clicked.
+                    newContact(contacts.get(x), x);
                 }
             });
             return row;
@@ -322,8 +327,8 @@ public class Main extends Application{
      * or by using the <i>Edit</i> option on the currently selected item.
      * @param c - This is the <b>Contact</b> object to pass to the new form.
      */
-    private void newContact(Contact c){
-        new ContactForm(c, appStage);
+    private void newContact(Contact c, int idx){
+        new ContactForm(c, idx, appStage);
     }
 
     /**
